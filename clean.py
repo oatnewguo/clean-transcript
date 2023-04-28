@@ -1,6 +1,7 @@
 '''
 Helps clean auto-generated transcripts, by replacing common mistakes and
-by replacing Zoom's .vtt format with one I think is more human-readable.
+by replacing Zoom's VTT format with one I think is more human-readable.
+For more help, try python clean.py -h
 
 To tailor this script to your needs, you can modify the two dictionaries at the top
 that handle replacements: case_sensitive_replacements and case_insensitive_replacements.
@@ -12,17 +13,9 @@ which the code will transform and add to case_insensitive_replacements
 to look for common repeat words that are safe to replace.
 
 More complex changes that deal with format are documented within the clean method.
-
-Run using "python3 clean.py <file_name>".
-Expects P<number>.txt or .vtt for file_name and will double-check if you provide anything else.
-
-To also replace the participant's name with an alias, run using
-"python3 clean.py <file_name> <participant_name> <participant_alias>".
-Unlike the dictionary-based replacements, <participant_name> is handled as a string, not as regex
-(this is to allow easy copy-and-pasting of Zoom names that contain parentheses).
 '''
 
-import sys, re, warnings
+import sys, re, argparse
 from typing import Tuple, Dict
 
 case_sensitive_replacements = {
@@ -89,7 +82,15 @@ case_insensitive_replacements = {
     " coven ": " COVID ",
     "mag safe": "MagSafe",
     "wire shark": "Wireshark",
-    "deep fake": "deepfake"
+    "deep fake": "deepfake",
+    "skill share": "Skillshare",
+    "pixley": "Pixly",
+    "makerwatch": "Makrwatch",
+    "maker watch": "Makrwatch",
+    "nord vpn": "NordVPN",
+    "more vpn": "NordVPN",
+    "nordvpns": "NordVPN's",
+    "express vpn": "ExpressVPN"
 }
 
 case_insensitive_repeats = {
@@ -129,14 +130,15 @@ def clean(file_name: str, case_sensitive_replacements: Dict[str, str], case_inse
         print("\nOther changes:")
 
         # deletes line numbers and complicated timestamps and keeps just a simple start timestamp for each line.
-        # I wrote this to work when importing transcript rows to NVivo, before I realized NVivo's transcript rows feature is hot garbage on Mac
-        (text, replace_count) = handle_replacement(text, r"\d+\n(?P<start>\d{2}:\d{2}:\d{2}\.\d)\d{2} --> \d{2}:\d{2}:\d{2}\.\d{3}",
+        # I originally wrote this to work when importing transcript rows to NVivo, before I realized NVivo's transcript rows feature is hot garbage on Mac
+        (text, replace_count) = handle_replacement(text,
+                                                   r"(\d+\n)?(?P<start>(\d{2}:)?\d{2}:\d{2}\.\d)\d{2} --> (\d{2}:)?\d{2}:\d{2}\.\d{3}",
                                                    r"\g<start>")
         if replace_count != 0:
             print(f" {replace_count} lines/timestamps processed")
 
         # combines consecutive lines if they share the same speaker
-        (text, replace_count) = handle_replacement(text, r"(?<=\d{2}:\d{2}:\d{2}\.\d\n)(?P<speaker>.+: )(?P<line_1>.+)\n\n\d{2}:\d{2}:\d{2}\.\d\n(?P=speaker)(?P<line_2>.+)",
+        (text, replace_count) = handle_replacement(text, r"(?<=\d{2}:\d{2}\.\d\n)(?P<speaker>.+: )(?P<line_1>.+)\n\n(\d{2}:)?\d{2}:\d{2}\.\d\n(?P=speaker)(?P<line_2>.+)",
                                                    r"\g<speaker>\g<line_1> \g<line_2>")
         if replace_count != 0:
             print(f" {replace_count} times consolidating same-speaker lines")
@@ -174,13 +176,21 @@ def handle_replacement(text: str, problem: str, replacement: str, case_insensiti
 
     return (text, replace_count)
 
-if len(sys.argv) > 1:
-    file_name = sys.argv[1]
-    if not re.fullmatch(r"P\d+\.(txt|vtt)", file_name):
-        if input(f"Are you sure you want to clean {file_name}? (Y/N): ").lower() not in {"y", "yes"}:
-            quit()
+parser = argparse.ArgumentParser(description = "Helps clean auto-generated transcripts, by replacing common mistakes and by replacing Zoom's VTT format with one I think is more human-readable.\n\nTo tailor this script to your needs, you can modify the two dictionaries at the top that handle replacements: case_sensitive_replacements and case_insensitive_replacements. Keys and values ({\"<key>\": \"<value>\", ...}) are fed into re.subn:\n    keys = regex patterns to find and replace\n    values = string replacements\nYou can also add strings to the case_insensitive_repeats set, which the code will transform and add to case_insensitive_replacements to look for common repeat words that are safe to replace.\n\nMore complex changes that deal with format are documented within the clean method.")
 
-    if len(sys.argv) > 3:
-        case_sensitive_replacements[re.escape(sys.argv[2])] = sys.argv[3]
+parser.add_argument("file_name", help="name of file to clean; TXT or VTT expected")
+parser.add_argument("-n", "--p_name", help="participant's name, to be aliased; use with --p_name. Unlike the dictionary-based replacements, <participant_name> is handled as a string, not as regex (this is to allow easy copy-and-pasting of Zoom names that contain parentheses).")
+parser.add_argument("-a", "--p_alias", help="alias to replace participant's name; use with --p_alias")
+args = parser.parse_args()
 
-    clean(file_name, case_sensitive_replacements, case_insensitive_replacements)
+if (args.p_name == None and args.p_alias != None) or (args.p_name != None and args.p_alias == None):
+    sys.exit("Arguments p_name and p_alias must be used together or not at all.")
+
+if not (args.file_name.lower().endswith(".txt") or args.file_name.lower().endswith(".vtt")):
+    if input(f"Are you sure you want to clean {args.file_name}? (Y/N): ").lower() not in {"y", "yes"}:
+        quit()
+
+if args.p_name != None:
+    case_sensitive_replacements[re.escape(args.p_name)] = args.p_alias
+
+clean(args.file_name, case_sensitive_replacements, case_insensitive_replacements)
