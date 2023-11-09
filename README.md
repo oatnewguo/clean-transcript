@@ -8,7 +8,7 @@ You can ignore merge.py and just run clean.py if you're not merging two transcri
 
 ## Running the scripts
 
-Merge: ``python merge.py <text_file_name> <speaker_file_name>``, where ``<text_file_name>`` is the name of the VTT file with better transcription, and ``<speaker_file_name>`` is the name of VTT file with speaker labels. 
+Merge: ``python merge.py <text_file_name> <speaker_file_name>``, where ``<text_file_name>`` is the name of the VTT file with better transcription, and ``<speaker_file_name>`` is the name of the VTT file with speaker labels. 
 
 Clean: ``python clean.py <file_name> -n <participant_name> -a <participant_alias>``. You should run this a few times until it stops reporting changes (I plan to fix this issue in the future). ``<participant_name>`` and ``<participant_alias>`` are optional; if provided, all instances of the name are replaced by the alias (e.g., replace "Wentao Guo" with "P1").
 

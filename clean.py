@@ -7,7 +7,7 @@ To tailor this script to your needs, you can modify the two dictionaries at the 
 that handle replacements: case_sensitive_replacements and case_insensitive_replacements.
 Keys and values ({"<key>": "<value>", ...}) are fed into re.subn:
     keys = regex patterns to find and replace
-    values = string replacements
+    values = replacements (either regex patterns or callables) corresponding to the parameter repl for re.sub: https://docs.python.org/3/library/re.html#re.sub
 You can also add strings to the case_insensitive_repeats set,
 which the code will transform and add to case_insensitive_replacements
 to look for common repeat words that are safe to replace.
@@ -16,7 +16,7 @@ More complex changes that deal with format are documented within the clean metho
 '''
 
 import sys, re, argparse
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Callable
 
 case_sensitive_replacements = {
     "i'm": "I'm",
@@ -62,7 +62,12 @@ case_sensitive_replacements = {
     "alexa": "Alexa",
     "vpn": "VPN",
     " seo ": " SEO ",
-    "instagram": "Instagram"
+    "instagram": "Instagram",
+    "hello fresh": "Hello Fresh",
+    r" Um,* (?P<lower>[a-z]?)": lambda r: fr" {r.group('lower').upper()}",
+    r" Uh,* (?P<lower>[a-z]?)": lambda r: fr" {r.group('lower').upper()}",
+    r" um,* ": " ",
+    r" uh,* ": " "
 }
 
 case_insensitive_replacements = {
@@ -75,6 +80,7 @@ case_insensitive_replacements = {
     "series shortcut": "Siri Shortcut",
     "smart log": "smart lock",
     "wi fi": "Wi-Fi",
+    "wifi": "Wi-Fi",
     "internet connected": "Internet-connected",
     "mm hmm": "mmhmm",
     "i cloud": "iCloud",
@@ -90,7 +96,8 @@ case_insensitive_replacements = {
     "nord vpn": "NordVPN",
     "more vpn": "NordVPN",
     "nordvpns": "NordVPN's",
-    "express vpn": "ExpressVPN"
+    "express vpn": "ExpressVPN",
+    "data set": "dataset"
 }
 
 case_insensitive_repeats = {
@@ -101,9 +108,9 @@ case_insensitive_repeats = {
     "about", "as", "at", "by", "for", "from", "in", "like", "of", "on", "to", "with"
 }
 for word in case_insensitive_repeats:
-    case_insensitive_replacements[fr"(?P<first>\W{word})(\W{word})+(?P<end_delimiter>\W)"] = f"\g<first>\g<end_delimiter>"
+    case_insensitive_replacements[fr"(?P<first>\W{word})(\W+{word})+(?P<end_delimiter>\W)"] = r"\g<first>\g<end_delimiter>"
 
-def clean(file_name: str, case_sensitive_replacements: Dict[str, str], case_insensitive_replacements: Dict[str, str]) -> None:
+def clean(file_name: str, case_sensitive_replacements: Dict[str, str | Callable], case_insensitive_replacements: Dict[str, str | Callable]) -> None:
     '''
     Takes a file containing a Zoom automated transcript and cleans it, partially based on the replacements
     specified in the input dictionaries. Also deletes line numbers, simplifies timestamps, and combines
@@ -149,7 +156,7 @@ def clean(file_name: str, case_sensitive_replacements: Dict[str, str], case_inse
         file.truncate()
         file.write(text.strip());
 
-def handle_replacement(text: str, problem: str, replacement: str, case_insensitive: bool = False) -> Tuple[str, int]:
+def handle_replacement(text: str, problem: str, replacement: str | Callable, case_insensitive: bool = False) -> Tuple[str, int]:
     '''
     Attempts to replace all instances in text of the regex pattern specified by problem.
     Returns a tuple of the updated string, as well as a count of the number of replacements completed.
@@ -176,7 +183,7 @@ def handle_replacement(text: str, problem: str, replacement: str, case_insensiti
 
     return (text, replace_count)
 
-parser = argparse.ArgumentParser(description = "Helps clean auto-generated transcripts, by replacing common mistakes and by replacing Zoom's VTT format with one I think is more human-readable.\n\nTo tailor this script to your needs, you can modify the two dictionaries at the top that handle replacements: case_sensitive_replacements and case_insensitive_replacements. Keys and values ({\"<key>\": \"<value>\", ...}) are fed into re.subn:\n    keys = regex patterns to find and replace\n    values = string replacements\nYou can also add strings to the case_insensitive_repeats set, which the code will transform and add to case_insensitive_replacements to look for common repeat words that are safe to replace.\n\nMore complex changes that deal with format are documented within the clean method.")
+parser = argparse.ArgumentParser(description = "Helps clean auto-generated transcripts, by replacing common mistakes and by replacing Zoom's VTT format with one I think is more human-readable.\n\nTo tailor this script to your needs, you can modify the two dictionaries at the top that handle replacements: case_sensitive_replacements and case_insensitive_replacements. Keys and values ({\"<key>\": \"<value>\", ...}) are fed into re.subn:\n    keys = regex patterns to find and replace\n    values = replacements (either regex patterns or callables) corresponding to the parameter repl for re.sub: https://docs.python.org/3/library/re.html#re.sub\nYou can also add strings to the case_insensitive_repeats set, which the code will transform and add to case_insensitive_replacements to look for common repeat words that are safe to replace.\n\nMore complex changes that deal with format are documented within the clean method.")
 
 parser.add_argument("file_name", help="name of file to clean; TXT or VTT expected")
 parser.add_argument("-n", "--p_name", help="participant's name, to be aliased; use with --p_name. Unlike the dictionary-based replacements, <participant_name> is handled as a string, not as regex (this is to allow easy copy-and-pasting of Zoom names that contain parentheses).")
