@@ -108,7 +108,7 @@ case_insensitive_repeats = {
     "about", "as", "at", "by", "for", "from", "in", "like", "of", "on", "to", "with"
 }
 for word in case_insensitive_repeats:
-    case_insensitive_replacements[fr"(?P<first>\W{word})(\W+{word})+(?P<end_delimiter>\W)"] = r"\g<first>\g<end_delimiter>"
+    case_insensitive_replacements[fr"(?P<first>\W{word})([ ,]+{word})+(?P<end_delimiter>\W)"] = r"\g<first>\g<end_delimiter>"
 
 def clean(file_name: str, case_sensitive_replacements: Dict[str, str | Callable], case_insensitive_replacements: Dict[str, str | Callable]) -> None:
     '''
