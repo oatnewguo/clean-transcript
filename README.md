@@ -15,3 +15,5 @@ Clean: ``python clean.py <file_name> -n <participant_name> -a <participant_alias
 ## How I finish cleaning transcripts
 
 After cleaning a transcript using these scripts, I do a full manual pass. As a Mac user, I use ExpressScribe, free version, to control audio playback, and I use a plain text editor to edit the transcript. In ExpressScribe, you can customize controls such as play, pause, rewind, and fast-forward and map them to different function keys, and in MacOS's System Preferences, you can toggle the setting ``Keyboard > Keyboard Shortcuts > Function Keys > Use F1, F2, etc. keys as standard function keys`` setting to let you access these controls without holding down ``fn``.
+
+I believe manually cleaning transcripts is crucial, because even the best-performing automatic methods make serious mistakes from time to time. Although it's an extremely rare occurrence as far as I can tell, I have experienced Whisper hallucinating an entire sentence of on-topic text in the middle of its typically high-accuracy transcription.
