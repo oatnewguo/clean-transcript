@@ -120,21 +120,7 @@ def clean(file_name: str, case_sensitive_replacements: Dict[str, str | Callable]
     with open(file_name, "r+") as file:
         text = file.read()
 
-        # basic case-sensitive replacements
-        print("\nBasic case-sensitive replacements:")
-        for problem in case_sensitive_replacements:
-            (text, replace_count) = handle_replacement(text, problem, case_sensitive_replacements[problem])
-            if replace_count != 0:
-                print(f" {replace_count} replacements for \"{problem}\"")
-
-        # basic case-insensitive replacements
-        print("\nBasic case-insensitive replacements:")
-        for problem in case_insensitive_replacements:
-            (text, replace_count) = handle_replacement(text, problem, case_insensitive_replacements[problem], True)
-            if replace_count != 0:
-                print(f" {replace_count} replacements for \"{problem}\"")
-
-        print("\nOther changes:")
+        print("\nFormatting changes:")
 
         # deletes line numbers and complicated timestamps and keeps just a simple start timestamp for each line.
         # I originally wrote this to work when importing transcript rows to NVivo, before I realized NVivo's transcript rows feature is hot garbage on Mac
@@ -149,6 +135,20 @@ def clean(file_name: str, case_sensitive_replacements: Dict[str, str | Callable]
                                                    r"\g<speaker>\g<line_1> \g<line_2>")
         if replace_count != 0:
             print(f" {replace_count} times consolidating same-speaker lines")
+
+        # case-sensitive replacements
+        print("\nCase-sensitive replacements:")
+        for problem in case_sensitive_replacements:
+            (text, replace_count) = handle_replacement(text, problem, case_sensitive_replacements[problem])
+            if replace_count != 0:
+                print(f" {replace_count} replacements for \"{problem}\"")
+
+        # case-insensitive replacements
+        print("\nCase-insensitive replacements:")
+        for problem in case_insensitive_replacements:
+            (text, replace_count) = handle_replacement(text, problem, case_insensitive_replacements[problem], True)
+            if replace_count != 0:
+                print(f" {replace_count} replacements for \"{problem}\"")
 
         print("")
 
