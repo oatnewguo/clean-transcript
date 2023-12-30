@@ -47,7 +47,7 @@ def merge(text_file_name: str, speaker_file_name: str) -> None:
     print(f" Skipped {no_speaker_count} lines because the speaker could not be identified.")
     print("")
 
-    text_vtt.save()    
+    text_vtt.save()
 
 def get_next_info(iter: Iterator[webvtt.structures.Caption]) -> Tuple[datetime.time, str]:
     '''

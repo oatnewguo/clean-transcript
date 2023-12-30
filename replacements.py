@@ -66,6 +66,7 @@ case_sensitive_entire_word_replacements = {
 # Makes replacements ignoring case. Keys and values must have differences other than capitalization; otherwise, they trigger an infinite loop.
 case_insensitive_replacements = {
     # transcription errors
+    "  ": " ",
     "k-animity": "k-anonymity",
     r"home kits?": "HomeKit", # use regex to match both "home kit" and "home kits"
     r"home kids?": "HomeKit",
