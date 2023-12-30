@@ -4,12 +4,11 @@ For more help, try python merge.py -h.
 
 Useful when you have one VTT with labeled speakers but worse transcription (e.g., Zoom)
 and another without labeled speakers but better transcription (e.g., OpenAI's Whisper).
-Note that speaker labels are applied at the caption level, so if the VTT with better transcription
-doesn't start a new caption when the speaker switches, then you still need to do some manual cleaning
-whenever the speaker switches.
+Note that speaker labels will probably be slightly off depending on how lines are split up and timestamped,
+so some manual cleaning is likely necessary.
 '''
 
-import sys, re, argparse, webvtt, datetime
+import sys, argparse, webvtt, datetime
 from collections.abc import Iterator
 from typing import Tuple
 
@@ -65,17 +64,17 @@ def get_next_info(iter: Iterator[webvtt.structures.Caption]) -> Tuple[datetime.t
     return (datetime.time.fromisoformat(next_caption.start), speaker_partition[0] if speaker_partition[2] else None)
 
 
-parser = argparse.ArgumentParser(description = "Adds info about speakers from one VTT file to another VTT file of the same recording without speaker information. Useful when you have one VTT with labeled speakers but worse transcription (e.g., Zoom) and another without labeled speakers but better transcription (e.g., OpenAI's Whisper). Note that speaker labels are applied at the caption level, so if the VTT with better transcription doesn't start a new caption when the speaker switches, then you still need to do some manual cleaning whenever the speaker switches.")
+parser = argparse.ArgumentParser(description = "Adds info about speakers from one VTT file to another VTT file of the same recording without speaker information. Useful when you have one VTT with labeled speakers but worse transcription (e.g., Zoom) and another without labeled speakers but better transcription (e.g., OpenAI's Whisper). Note that speaker labels will probably be slightly off depending on how lines are split up and timestamped, so some manual cleaning is likely necessary.")
 
 parser.add_argument("text_file_name", help="name of VTT file with better transcription; this file is updated")
 parser.add_argument("speaker_file_name", help="name of VTT file with speaker labels; this file is unchanged")
 
 args = parser.parse_args()
 if not args.text_file_name.lower().endswith(".vtt"):
-    if input(f"Are you sure you meant {args.text_file_name}? (Y/N): ").lower() not in {"y", "yes"}:
+    if input(f"VTT expected. Are you sure you meant {args.text_file_name}? (Y/N): ").lower() not in {"y", "yes"}:
         quit()
 if not args.speaker_file_name.lower().endswith(".vtt"):
-    if input(f"Are you sure you meant {args.speaker_file_name}? (Y/N): ").lower() not in {"y", "yes"}:
+    if input(f"VTT expected. Are you sure you meant {args.speaker_file_name}? (Y/N): ").lower() not in {"y", "yes"}:
         quit()
 
 merge(args.text_file_name, args.speaker_file_name)

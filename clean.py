@@ -3,112 +3,28 @@ Helps clean auto-generated transcripts, by replacing common mistakes and
 by replacing Zoom's VTT format with one I think is more human-readable.
 For more help, try python clean.py -h
 
-To tailor this script to your needs, you can modify the two dictionaries at the top
-that handle replacements: case_sensitive_replacements and case_insensitive_replacements.
-Keys and values ({"<key>": "<value>", ...}) are fed into re.subn:
-    keys = regex patterns to find and replace
-    values = replacements (either regex patterns or callables) corresponding to the parameter repl for re.sub: https://docs.python.org/3/library/re.html#re.sub
-You can also add strings to the case_insensitive_repeats set,
-which the code will transform and add to case_insensitive_replacements
-to look for common repeat words that are safe to replace.
+To customize text replacements, modify the data in replacements.py
 
 More complex changes that deal with format are documented within the clean method.
 '''
 
 import sys, re, argparse
 from typing import Tuple, Dict, Callable
+from replacements import case_sensitive_replacements, case_sensitive_entire_word_replacements, case_insensitive_replacements, case_insensitive_entire_word_replacements, case_preserving_replacements, case_preserving_entire_word_replacements, case_insensitive_repeats
 
-case_sensitive_replacements = {
-    "i'm": "I'm",
-    "i've": "I've",
-    "i'll": "I'll",
-    "i'd": "I'd",
-    "Wentao Guo": "Wentao",
-    "homekit": "HomeKit",
-    " apple ": " Apple ",
-    "APP": "app",
-    "DEMO": "demo",
-    " nest ": " Nest ",
-    " siri ": " Siri ",
-    "Siri shortcut": "Siri Shortcut",
-    "WEBVTT": "",
-    "internet": "Internet",
-    "gdpr": "GDPR",
-    " US ": " U.S. ",
-    "icloud": "iCloud",
-    " ios ": " iOS ",
-    "iphone": "iPhone",
-    "ipad": "iPad",
-    "Home Platform": "home platform",
-    "adsense": "AdSense",
-    "google": "Google",
-    "Google assistant": "Google Assistant",
-    "bluetooth": "Bluetooth",
-    " iot ": " IoT ",
-    "discord": "Discord",
-    "https": "HTTPS",
-    "http": "HTTP",
-    "gopro": "GoPro",
-    "ethernet": "Ethernet",
-    "cpu": "CPU",
-    "home depot": "Home Depot",
-    "best buy": "Best Buy",
-    "hdmi": "HDMI",
-    "youtube": "YouTube",
-    "android": "Android",
-    "fitbit": "Fitbit",
-    "huawei": "Huawei",
-    "motorola": "Motorola",
-    "alexa": "Alexa",
-    "vpn": "VPN",
-    " seo ": " SEO ",
-    "instagram": "Instagram",
-    "hello fresh": "Hello Fresh",
-    r" Um,* (?P<lower>[a-z]?)": lambda r: fr" {r.group('lower').upper()}",
-    r" Uh,* (?P<lower>[a-z]?)": lambda r: fr" {r.group('lower').upper()}",
-    r" um,* ": " ",
-    r" uh,* ": " "
-}
+for (key, value) in case_sensitive_entire_word_replacements.items():
+    case_sensitive_replacements[fr"(?<=\W){key}(?=\W)"] = value
+for (key, value) in case_insensitive_entire_word_replacements.items():
+    case_insensitive_replacements[fr"(?<=\W){key}(?=\W)"] = value
+for (key, value) in case_preserving_entire_word_replacements.items():
+    case_preserving_replacements[fr"(?<=\W){key}(?=\W)"] = value
 
-case_insensitive_replacements = {
-    "home kits": "HomeKit",
-    "home kit": "HomeKit",
-    "home kids": "HomeKit",
-    "home kid": "HomeKit",
-    "home care": "HomeKit",
-    "smart thing": "SmartThing",
-    "series shortcut": "Siri Shortcut",
-    "smart log": "smart lock",
-    "wi fi": "Wi-Fi",
-    "wifi": "Wi-Fi",
-    "internet connected": "Internet-connected",
-    "mm hmm": "mmhmm",
-    "i cloud": "iCloud",
-    "home pod": "HomePod",
-    " coven ": " COVID ",
-    "mag safe": "MagSafe",
-    "wire shark": "Wireshark",
-    "deep fake": "deepfake",
-    "skill share": "Skillshare",
-    "pixley": "Pixly",
-    "makerwatch": "Makrwatch",
-    "maker watch": "Makrwatch",
-    "nord vpn": "NordVPN",
-    "more vpn": "NordVPN",
-    "nordvpns": "NordVPN's",
-    "express vpn": "ExpressVPN",
-    "data set": "dataset"
-}
+for (key, value) in case_preserving_replacements.items():
+    # for an explanation of value=value, see https://docs.python-guide.org/writing/gotchas/#late-binding-closures
+    case_insensitive_replacements[key] = lambda r, value=value: f"{value[0].lower()}{value[1:]}" if r.group()[0].islower() else f"{value[0].upper()}{value[1:]}"
 
-case_insensitive_repeats = {
-    "the", "a", "an", "but", "and", "or", "if", "then", "so", "this", "that", "those", "these",
-    "I", "my", "I'm", "I'll", "I've", "I'd", "you", "your", "we", "our", "we're", "we'll", "we've", "we'd", "they", "their", "it", "its", "it's",
-    "is", "are", "was", "were", "can", "will", "may", "might",
-    "who", "what", "where", "when", "why", "how",
-    "about", "as", "at", "by", "for", "from", "in", "like", "of", "on", "to", "with"
-}
 for word in case_insensitive_repeats:
-    case_insensitive_replacements[fr"(?P<first>\W{word})([ ,]+{word})+(?P<end_delimiter>\W)"] = r"\g<first>\g<end_delimiter>"
+    case_insensitive_replacements[fr"(?<=\W{word})([ ,]+{word})+(?=\W)"] = ""
 
 def clean(file_name: str, case_sensitive_replacements: Dict[str, str | Callable], case_insensitive_replacements: Dict[str, str | Callable]) -> None:
     '''
@@ -183,18 +99,22 @@ def handle_replacement(text: str, problem: str, replacement: str | Callable, cas
 
     return (text, replace_count)
 
-parser = argparse.ArgumentParser(description = "Helps clean auto-generated transcripts, by replacing common mistakes and by replacing Zoom's VTT format with one I think is more human-readable.\n\nTo tailor this script to your needs, you can modify the two dictionaries at the top that handle replacements: case_sensitive_replacements and case_insensitive_replacements. Keys and values ({\"<key>\": \"<value>\", ...}) are fed into re.subn:\n    keys = regex patterns to find and replace\n    values = replacements (either regex patterns or callables) corresponding to the parameter repl for re.sub: https://docs.python.org/3/library/re.html#re.sub\nYou can also add strings to the case_insensitive_repeats set, which the code will transform and add to case_insensitive_replacements to look for common repeat words that are safe to replace.\n\nMore complex changes that deal with format are documented within the clean method.")
+parser = argparse.ArgumentParser(description = """Helps clean auto-generated transcripts, by replacing common mistakes and by replacing Zoom's VTT format with one I think is more human-readable.
+                                 
+To customize text replacements, modify the data in replacements.py
+                                 
+More complex changes that deal with format are documented within the clean method.""")
 
 parser.add_argument("file_name", help="name of file to clean; TXT or VTT expected")
-parser.add_argument("-n", "--p_name", help="participant's name, to be aliased; use with --p_name. Unlike the dictionary-based replacements, <participant_name> is handled as a string, not as regex (this is to allow easy copy-and-pasting of Zoom names that contain parentheses).")
-parser.add_argument("-a", "--p_alias", help="alias to replace participant's name; use with --p_alias")
+parser.add_argument("-n", "--p_name", help="participant's name, to be aliased. Unlike other text replacements, <participant_name> is handled as a string, not as regex (to allow copy-and-pasting of Zoom names with parentheses).")
+parser.add_argument("-a", "--p_alias", help="alias to replace participant's name.")
 args = parser.parse_args()
 
 if (args.p_name == None and args.p_alias != None) or (args.p_name != None and args.p_alias == None):
-    sys.exit("Arguments p_name and p_alias must be used together or not at all.")
+    sys.exit("Arguments p_name (-n) and p_alias (-a) must be used together or not at all.")
 
 if not (args.file_name.lower().endswith(".txt") or args.file_name.lower().endswith(".vtt")):
-    if input(f"Are you sure you want to clean {args.file_name}? (Y/N): ").lower() not in {"y", "yes"}:
+    if input(f"TXT or VTT expected. Are you sure you want to clean {args.file_name}? (Y/N): ").lower() not in {"y", "yes"}:
         quit()
 
 if args.p_name != None:
