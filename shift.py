@@ -1,12 +1,10 @@
 '''
-Shifts all timestamps in one VTT file. Behaves incorrectly if timestamps go over 24 hours.
+Shifts all timestamps in one VTT file.
+Behaves incorrectly if timestamps go (or would be shifted) over 24 hours.
 For more help, try python shift.py -h.
 
 For cases when two VTT files are not aligned (e.g., a recording was split into segments
-to feed into Whisper). Small tweaks may be useful more generally (e.g., shifting Whisper
-transcripts ahead by a second may improve the performance of merge.py when merging with
-Zoom transcripts), but I'm still experimenting, and anyway if this is true I'll likely
-change merge.py to account for that benefit automatically.
+to feed into Whisper).
 '''
 
 import argparse, webvtt, datetime

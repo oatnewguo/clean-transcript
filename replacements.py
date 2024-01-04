@@ -94,7 +94,11 @@ case_insensitive_entire_word_replacements = {
     "coven": "COVID",
     "i cloud": "iCloud",
     "mag safe": "MagSafe",
-    "wire shark": "Wireshark"
+    "wire shark": "Wireshark",
+
+    # style nitpicks
+    "code book": "codebook",
+    "cross tabs": "crosstabs"
 }
 
 # Makes replacements in re.IGNORECASE mode but capitalizes the replacement if the replaced text was capitalized. Keys and values must have differences other than capitalization; otherwise, they trigger an infinite loop.
@@ -117,7 +121,7 @@ case_preserving_entire_word_replacements = {
 case_insensitive_repeats = {
     "the", "a", "an", "but", "and", "or", "if", "then", "so", "this", "that", "those", "these",
     "I", "my", "I'm", "I'll", "I've", "I'd", "you", "your", "we", "our", "we're", "we'll", "we've", "we'd", "they", "their", "it", "its", "it's",
-    "is", "are", "was", "were", "can", "will", "may", "might",
+    "is", "isn't", "are", "aren't", "was", "wasn't", "were", "weren't", "can", "can't", "will", "won't", "may", "might", "do", "don't",
     "who", "what", "where", "when", "why", "how",
     "about", "as", "at", "by", "for", "from", "in", "like", "of", "on", "to", "with"
 }
